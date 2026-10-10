@@ -1,0 +1,6 @@
+endpoint,exact_model,function,status,evidence_source,date_checked,control_path,limitations,next_test
+Govee,Unknown,Lighting scene,Unknown,,,,Identify model,
+Vizio,Unknown,Power,Unknown,,,,Identify model,
+Vizio,Unknown,Input selection,Unknown,,,,Identify model,
+Vizio,Unknown,Ambient content playback,Unknown,,,,Identify model,
+Mac,To confirm,Audio playback,Unknown,,,,Assess local playback,
