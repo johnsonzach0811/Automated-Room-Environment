@@ -18,6 +18,9 @@ def validate(config):
     require(isinstance(config, dict), "Configuration must be a JSON object")
     device = config.get("device")
     require(isinstance(device, dict), "device must be an object")
+    if 'identity' in device:
+        require(isinstance(device['identity'], str) and bool(device['identity'].strip()),
+                'device.identity must be a nonempty string')
     ip = device.get("ip")
     try:
         ipaddress.IPv4Address(ip)

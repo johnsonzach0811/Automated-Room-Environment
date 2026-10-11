@@ -1,3 +1,5 @@
 test_id,timestamp,trigger,scene,enabled_actions,observed_result,success,latency_seconds,retries,failure_notes
 DISC-001,2026-10-10 America/Chicago,Manual Terminal,LAN discovery,Discovery request,FOUND model H619D,yes,,,No exact timestamp or latency measured
 LIGHT-001,2026-10-10 America/Chicago,Manual Terminal,Initial orange test,RGB 255/120/25 and brightness 30 percent,User confirmed color change and substantial dimming,yes,,,Power transition not independently verified; no state readback; one execution only
+LIGHT-002,2026-10-11 12:01 America/Chicago,Dashboard HTTP,Morning,Power; brightness 30; RGB 255/210/160,Physical devStatus matched all fields,yes,4.45,0,Includes discovery and settling; restored original state afterward
+LIGHT-003,2026-10-11 12:01 America/Chicago,Dashboard HTTP,Focus,Power; brightness 65; RGB 255/245/225,Physical devStatus matched all fields,yes,4.44,0,Includes discovery and settling; not a scheduled run
