@@ -104,6 +104,33 @@ class SceneEngineTests(unittest.TestCase):
         # Unaffected device still applied.
         self.assertEqual(self.b.command_log, [])
 
+    def test_network_failure_recorded_per_device(self):
+        import transport
+        from devices import GoveeLight
+
+        def boom(sock, ip, port, cmd, data):
+            raise transport.ConnectionError("network down")
+
+        net = GoveeLight("net", "192.168.4.99",
+                         socket_factory=lambda: FakeSocketForScenes(),
+                         sender=boom)
+        engine = SceneEngine({"net": net, "b": self.b})
+        scene = scene_from_config("x", {"devices": {"net": {"power": True},
+                                                   "b": {"power": True}}})
+        with self.assertRaises(DeviceError) as ctx:
+            engine.apply(scene)
+        self.assertIn("net", str(ctx.exception))
+        # The healthy device still applied despite the network failure.
+        self.assertTrue(self.b.get_state().power)
+
+
+class FakeSocketForScenes:
+    def __enter__(self):
+        return object()
+
+    def __exit__(self, *args):
+        return False
+
 
 if __name__ == "__main__":
     unittest.main()

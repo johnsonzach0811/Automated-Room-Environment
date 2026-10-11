@@ -23,6 +23,7 @@ import time
 from dataclasses import dataclass, field
 
 from devices import Device, DeviceError, LightState
+from transport import ConnectionError
 
 log = logging.getLogger(__name__)
 
@@ -108,7 +109,7 @@ class SceneEngine:
             try:
                 self._apply_to_device(device, target, scene.transition)
                 outcomes[device_name] = "ok"
-            except DeviceError as exc:
+            except (DeviceError, ConnectionError) as exc:
                 outcomes[device_name] = str(exc)
                 log.error("Scene %s: device %s failed: %s", scene.name, device_name, exc)
         failed = {k: v for k, v in outcomes.items() if v != "ok"}
