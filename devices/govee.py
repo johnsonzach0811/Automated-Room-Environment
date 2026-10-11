@@ -34,12 +34,10 @@ class GoveeLight(Device):
         self._state = LightState(power=False)
 
     def _send(self, sock, command, data):
-        try:
-            self._sender(sock, self.ip, self.port, command, data)
-        except ConnectionError as exc:
-            raise DeviceError(
-                f"Govee light {self.name!r} at {self.ip}:{self.port}: {exc}"
-            ) from exc
+        # transport.ConnectionError propagates unwrapped: it already names
+        # the command and destination, and callers (scheduler, scenes) handle
+        # it alongside DeviceError.
+        self._sender(sock, self.ip, self.port, command, data)
 
     def apply_state(self, state: LightState) -> None:
         log.info("Govee %s: applying power=%s brightness=%s color=%s",

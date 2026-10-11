@@ -19,8 +19,12 @@ DEVICE_TYPES = {
 }
 
 
-def build_device(entry: dict) -> Device:
-    """Build a Device from a validated config entry."""
+def build_device(entry: dict, socket_factory=None, sender=None) -> Device:
+    """Build a Device from a validated config entry.
+
+    socket_factory/sender are forwarded to LAN devices so callers (and
+    tests) can inject fakes; they default to the real transport.
+    """
     name = entry.get("name")
     dtype = entry.get("type", "govee")
     if dtype not in DEVICE_TYPES:
@@ -29,11 +33,16 @@ def build_device(entry: dict) -> Device:
             f"supported types: {', '.join(sorted(DEVICE_TYPES))}"
         )
     if dtype == "govee":
-        return GoveeLight(name, entry["ip"], entry.get("port", DEFAULT_PORT))
+        kwargs = {}
+        if socket_factory is not None:
+            kwargs["socket_factory"] = socket_factory
+        if sender is not None:
+            kwargs["sender"] = sender
+        return GoveeLight(name, entry["ip"], entry.get("port", DEFAULT_PORT), **kwargs)
     return SimulatedLight(name)
 
 
-def build_registry(config: dict) -> dict[str, Device]:
+def build_registry(config: dict, socket_factory=None, sender=None) -> dict[str, Device]:
     """Build every configured device, keyed by name.
 
     Accepts the legacy single-device config ({"device": {...}}) and the new
@@ -42,7 +51,7 @@ def build_registry(config: dict) -> dict[str, Device]:
     """
     registry: dict[str, Device] = {}
     for entry in config.get("devices", []):
-        device = build_device(entry)
+        device = build_device(entry, socket_factory=socket_factory, sender=sender)
         if device.name in registry:
             raise DeviceError(f"Duplicate device name: {device.name!r}")
         registry[device.name] = device
@@ -50,7 +59,7 @@ def build_registry(config: dict) -> dict[str, Device]:
         legacy = dict(config["device"])
         legacy.setdefault("name", "default")
         legacy.setdefault("type", "govee")
-        registry["default"] = build_device(legacy)
+        registry["default"] = build_device(legacy, socket_factory=socket_factory, sender=sender)
     return registry
 
 
