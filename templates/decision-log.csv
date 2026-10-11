@@ -1,1 +1,4 @@
 id,date,decision,alternatives,evidence,rationale,scope_effort_date_impact,owner,status
+DEC-001,2026-10-10,Start execution with lighting only,TV and audio in parallel,User requested lights first,Reduce immediate integration uncertainty,Execution sequencing only; original Phase A acceptance retained,Zachary Johnson,Selected
+DEC-002,2026-10-10,Use direct Python LAN commands for initial H619D test,Bluetooth or automation platform setup,Discovery and color/brightness visually confirmed,Lowest setup effort for one endpoint,Prototype path only; full controller architecture still open,Zachary Johnson,Provisional
+DEC-003,2026-10-10,Do not adopt initial orange test as an evening preset,Keep first tested color,User rejected initial color despite liking dimmer brightness,Technical success does not establish aesthetic fit,Compare three candidate colors before selecting a preset,Zachary Johnson,Selected
