@@ -29,6 +29,12 @@ Downloaded and verified the complete Git bundle from the prior conversation. Its
 
 Draft PR #1 preserves that work for review. It is not deployed. Review found default-device synthesis/routing issues in devices-only configs, dashboard loss of scene schedule targets, unbounded/non-finite transition parameters, and fades based on default/requested state with send delays added to nominal duration. These should be corrected before merge. Simulated device tests do not establish multi-device physical compatibility.
 
+## Deployment
+
+Installed feature/lighting-controls on the existing Mac checkout. Prior uncommitted dashboard/reliability files were preserved in a named Git stash and a separate file backup. The installer backed up local configuration and previous LaunchAgents, retired the unloaded legacy definition, and loaded a single scheduler. The enabled Monday–Thursday 06:45 routine and presets were preserved. The installed job subsequently completed two unattended minute checks with exit code zero; neither was a due lighting run. Automation is resumed. The updated dashboard is running at http://127.0.0.1:8765. PR #2 contains this update; main is unchanged pending review.
+
+A one-time follow-up is scheduled for Monday October 12 at 06:50 America/Chicago to inspect the regular 06:45 result. It will not send lighting commands or override a user pause.
+
 ## Scope boundary
 
 This work does not complete M1 or Phase A. TV/audio and original-versus-lighting-only scope will be decided with the user separately. The normal Monday run, restart/login, sleep/wake, and physical offline scenarios remain pending. Historical records remain intact with current-status notices.
