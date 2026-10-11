@@ -36,3 +36,12 @@ Proposed logical structure, pending M1: scene controls → scene/schedule coordi
 - [ ] Next week's tasks estimated within available hours.
 
 If a blocker remains unknown at the timebox, close M1 as conditional with a bounded follow-up task. Do not label compatibility validated without evidence.
+
+## Progress — October 10, 2026
+
+- H619D identified; LAN Control enabled in Govee Home.
+- Mac discovery returned model H619D; network address kept local.
+- Direct Python UDP commands changed RGB color and brightness; user visually confirmed both.
+- Current implementation path for the lighting experiment: Mac Python → local LAN → H619D. No Bluetooth, cloud API key or purchased hub used for this test.
+- User chose to begin with lights only. TV and audio investigations are deferred in execution order; the original two-category Phase A gate is unchanged pending a formal scope revision.
+- M1 remains open: full controller architecture, Mac availability behavior, remaining endpoint assessments and effort tracking are incomplete.
