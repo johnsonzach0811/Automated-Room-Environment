@@ -7,6 +7,8 @@ import socket
 import time
 from pathlib import Path
 
+from validation import ConfigError, validate
+
 ROOT = Path(__file__).resolve().parent
 CONFIG = ROOT / "config.json"
 STATE = Path.home() / "Library" / "Application Support" / "RoomAutomation" / "last-runs.json"
@@ -25,7 +27,7 @@ def setup_logging():
 
 def load_config():
     with CONFIG.open() as f:
-        return json.load(f)
+        return validate(json.load(f))
 
 
 def send(sock, ip, port, cmd, data):
@@ -79,22 +81,29 @@ def check_schedules(config):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=["preset", "check"])
+    parser.add_argument("action", choices=["preset", "check", "validate"])
     parser.add_argument("name", nargs="?")
     args = parser.parse_args()
     setup_logging()
     try:
         config = load_config()
         run_action(args, config)
+    except (ConfigError, json.JSONDecodeError) as exc:
+        logging.error("Invalid configuration: %s", exc)
+        raise SystemExit(1) from None
     except Exception:
         logging.exception("Automation failed")
         raise
 
 
 def run_action(args, config):
-    if args.action == "preset":
+    if args.action == "validate":
+        print("Configuration valid: presets and schedules checked; no commands sent")
+    elif args.action == "preset":
         if not args.name:
-            parser.error("preset requires a name, e.g. python3 scheduler.py preset morning")
+            raise ConfigError("preset requires a name, e.g. python3 scheduler.py preset morning")
+        if args.name not in config["presets"]:
+            raise ConfigError(f"Unknown preset: {args.name!r}")
         apply_preset(config, args.name)
     else:
         check_schedules(config)
