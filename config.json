@@ -1,0 +1,40 @@
+{
+  "device": {
+    "ip": "192.168.4.29",
+    "port": 4003
+  },
+  "presets": {
+    "morning": {
+      "power": true,
+      "brightness": 30,
+      "color": {
+        "r": 255,
+        "g": 210,
+        "b": 160
+      }
+    },
+    "focus": {
+      "power": true,
+      "brightness": 65,
+      "color": {
+        "r": 255,
+        "g": 245,
+        "b": 225
+      }
+    }
+  },
+  "schedules": [
+    {
+      "name": "Weekday morning",
+      "enabled": false,
+      "time": "06:45",
+      "days": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu"
+      ],
+      "preset": "morning"
+    }
+  ]
+}
