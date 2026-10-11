@@ -3,11 +3,10 @@ import argparse
 import datetime as dt
 import json
 import logging
-import socket
-import time
 from pathlib import Path
 
 from validation import ConfigError, validate
+from transport import ConnectionError, open_socket, send
 
 ROOT = Path(__file__).resolve().parent
 CONFIG = ROOT / "config.json"
@@ -30,23 +29,10 @@ def load_config():
         return validate(json.load(f))
 
 
-def send(sock, ip, port, cmd, data):
-    payload = json.dumps({"msg": {"cmd": cmd, "data": data}}).encode()
-    for attempt in range(3):
-        try:
-            sock.sendto(payload, (ip, port))
-            time.sleep(0.3)
-            return
-        except OSError:
-            if attempt == 2:
-                raise
-            time.sleep(1)
-
-
 def apply_preset(config, name):
     preset = config["presets"][name]
     device = config["device"]
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+    with open_socket() as sock:
         send(sock, device["ip"], device.get("port", 4003), "turn", {"value": int(preset["power"])})
         if preset["power"]:
             send(sock, device["ip"], device.get("port", 4003), "brightness", {"value": preset["brightness"]})
@@ -64,6 +50,7 @@ def check_schedules(config):
         runs = json.loads(STATE.read_text())
     except (FileNotFoundError, json.JSONDecodeError):
         runs = {}
+    failed = False
     for schedule in config["schedules"]:
         if not schedule.get("enabled", False):
             continue
@@ -73,11 +60,17 @@ def check_schedules(config):
         if runs.get(key) == minute:
             continue
         logging.info("Schedule %s due at %s; applying %s", key, minute, schedule["preset"])
-        apply_preset(config, schedule["preset"])
+        try:
+            apply_preset(config, schedule["preset"])
+        except ConnectionError as exc:
+            logging.error("Schedule %s failed; not marked completed: %s", key, exc)
+            failed = True
+            continue
         runs[key] = minute
         STATE.write_text(json.dumps(runs, indent=2) + "\n")
         logging.info("Schedule %s: commands sent at %s", key, minute)
 
+    return not failed
 
 def main():
     parser = argparse.ArgumentParser()
@@ -90,6 +83,9 @@ def main():
         run_action(args, config)
     except (ConfigError, json.JSONDecodeError) as exc:
         logging.error("Invalid configuration: %s", exc)
+        raise SystemExit(1) from None
+    except ConnectionError as exc:
+        logging.error("Lighting connection failed: %s", exc)
         raise SystemExit(1) from None
     except Exception:
         logging.exception("Automation failed")
@@ -106,7 +102,8 @@ def run_action(args, config):
             raise ConfigError(f"Unknown preset: {args.name!r}")
         apply_preset(config, args.name)
     else:
-        check_schedules(config)
+        if not check_schedules(config):
+            raise SystemExit(1)
 
 
 if __name__ == "__main__":

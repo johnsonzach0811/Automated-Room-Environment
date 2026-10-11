@@ -29,3 +29,10 @@ Templates live in `templates/`. Phase A success criteria and scope changes are g
 ## Repository hygiene
 
 Keep API keys, pairing tokens, personal media files, and home network/device details out of commits. Use `.env.example` or redacted configuration if code is introduced. No open-source license has been selected.
+
+## Local lighting dashboard
+
+The repository now includes configurable lighting automation and a standard-library
+local dashboard. Run `python3 -B dashboard.py`, then open http://127.0.0.1:8765.
+See [setup, schedule safety, and verification](docs/local-dashboard.md).
+Run `python3 -B -m unittest discover -s tests -v` for automated checks.

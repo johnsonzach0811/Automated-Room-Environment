@@ -60,6 +60,6 @@ def validate(config):
         require(isinstance(days, list) and bool(days) and all(isinstance(day, str) and day in DAYS for day in days),
                 f"{prefix}.days must be a nonempty list of Mon, Tue, Wed, Thu, Fri, Sat, Sun")
         require(len(days) == len(set(days)), f"{prefix}.days contains duplicates")
-        require(schedule.get("preset") in presets,
+        require(isinstance(schedule.get("preset"), str) and schedule.get("preset") in presets,
                 f"{prefix}.preset must reference an existing preset: {', '.join(presets)}")
     return config

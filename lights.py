@@ -1,22 +1,20 @@
 """Basic local Govee LAN light control for the H619D."""
 import argparse
-import json
-import socket
-import time
+import logging
+
+from transport import ConnectionError, open_socket, send as send_command
 
 LIGHT_IP = "192.168.4.29"
 PORT = 4003
 
 def send(sock, command, data):
-    packet = {"msg": {"cmd": command, "data": data}}
-    sock.sendto(json.dumps(packet).encode(), (LIGHT_IP, PORT))
-    time.sleep(0.3)
+    send_command(sock, LIGHT_IP, PORT, command, data)
 
 def main():
     parser = argparse.ArgumentParser(description="Control Govee lights over LAN")
     parser.add_argument("action", choices=["on", "off"])
     args = parser.parse_args()
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+    with open_socket() as sock:
         if args.action == "off":
             send(sock, "turn", {"value": 0})
         else:
@@ -26,7 +24,11 @@ def main():
                 "color": {"r": 255, "g": 210, "b": 160},
                 "colorTemInKelvin": 0,
             })
-    print(f"Sent {args.action} command to {LIGHT_IP}")
+    print(f"Sent {args.action} command to {LIGHT_IP} (delivery not confirmed)")
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except ConnectionError as exc:
+        logging.error("Lighting connection failed: %s", exc)
+        raise SystemExit(1) from None
