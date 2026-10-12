@@ -38,3 +38,11 @@ A one-time follow-up is scheduled for Monday October 12 at 06:50 America/Chicago
 ## Scope boundary
 
 This work does not complete M1 or Phase A. TV/audio and original-versus-lighting-only scope will be decided with the user separately. The normal Monday run, restart/login, sleep/wake, and physical offline scenarios remain pending. Historical records remain intact with current-status notices.
+
+## Monday October 12 follow-up — 06:50 America/Chicago
+
+The 06:45 Weekday morning routine was skipped because the persisted automation state was paused. At 06:45:04.634, room-automation.log recorded `Automation paused; scheduled changes skipped`. The configured routine remained enabled for Monday–Thursday at 06:45, but last-runs.json had no Weekday morning completion marker; it contained only the historical October 10 Scheduler test marker.
+
+The installed scheduler remained loaded, with 1,125 checks and last exit code zero at inspection. That exit status reflects a completed paused check, not a successful lighting send. No morning preset send is verified for this run. This provides real unattended evidence that pause suppresses scheduled changes; regular morning lighting activation remains unverified.
+
+The follow-up did not send commands, query or alter the light, resume automation, or edit schedules. Current device state was not read because it could not establish whether a skipped event executed. To allow a later regular routine, the user must explicitly Resume automation; missed routines will not be replayed. The one-time follow-up is disabled after this check. Phase A scope remains unchanged.
