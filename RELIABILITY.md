@@ -1,24 +1,11 @@
-# Connection handling and automated tests
+# Connection handling and scheduling
 
-Run `python3 -B -m unittest discover -s tests -v` from the repository.
-Tests use fake sockets and temporary schedule state; they never send LAN commands
-or modify launchd jobs, live logs, configuration, or production run history.
+Run `python3 -B -m unittest discover -s tests -v`. Tests isolate configuration, override state, run history, and sockets; they never send LAN controls or edit LaunchAgents.
 
-Both scheduler.py and the legacy lights.py use transport.py. Each UDP send has a
-2-second socket timeout, at most three attempts, and 1- then 2-second retry delays.
-Errors identify the command and destination. Socket initialization errors and
-exhausted sends exit with status 1. Successful sends retain the original 0.3-second
-spacing. Success means the operating system accepted a datagram, not that the
-light received or applied it; an offline UDP destination may produce no error.
+Each UDP send has a two-second socket timeout, at most three attempts, and one- then two-second retry delays. Success retains 0.3-second spacing and means local send acceptance, not device acknowledgement. Partial presets may leave partially changed settings. Failed schedules are not marked complete; other due schedules continue. Retry is possible within the same minute; no late catch-up occurs.
 
-A failed scheduled preset is not marked complete; remaining due schedules are
-still attempted. Launchd may retry within the same scheduled minute, but there is
-no late catch-up. A partially applied preset may leave some light settings changed.
+Manual dashboard/CLI controls persist a pause before sending. A failed valid manual command also pauses. Invalid input does not alter pause state. Resume is explicit and does not replay missed routines. An OS file lock serializes manual controls, pause changes, and scheduler checks across processes. A pause cannot undo commands already in progress; once it returns, later scheduled changes are blocked. Corrupt override state defaults to paused.
 
-The existing Monday–Thursday 06:45 configuration and launchd files are preserved.
-Two launchd definitions exist locally (scheduler and legacy morninglights).
-Their loaded status was not available from the initial restricted session;
-if both are loaded, both can send commands at 06:45. Neither is changed here.
+Paired device identity enables bounded discovery before each control batch; an unavailable/ambiguous device prevents a send. Status reads are explicit verification tools, not continuously polled dashboard state.
 
-Validation also rejects non-string preset references with ConfigError rather than
-an unexpected TypeError. No dependencies are needed beyond Python's standard library.
+On October 11 the configurable scheduler was loaded with zero last exit status, and the legacy morning job was not loaded. Temporary test jobs and schedule entries were absent. Installation cleanup now retires legacy definitions with backups. See the dated verification record for hardware evidence and the pending regular Monday 06:45 run.

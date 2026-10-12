@@ -1,59 +1,15 @@
-# Local room dashboard
+# Local lighting dashboard
 
-Requires Python 3.9+; no packages, account, or cloud service needed.
+Run `python3 -B dashboard.py`, then open http://127.0.0.1:8765 on this Mac. Keep the process running; Ctrl-C stops the dashboard. Use `--port 8766` if needed. It binds only to 127.0.0.1. Do not proxy or forward it to another network. Local users/processes can access it.
 
-```sh
-cd ~/automated-room-environment
-python3 -B dashboard.py
-```
+Morning and Focus reuse saved presets. On/off sends power only; brightness and color send their setting only and do not turn an off light on. Sliders are desired settings rather than live device state. Success messages report sent commands, not confirmed physical delivery.
 
-Open http://127.0.0.1:8765 in a browser on this Mac. Keep the terminal running;
-Ctrl-C stops the dashboard. Use `--port 8766` if the port is busy. The server
-always binds to 127.0.0.1; there is no public-network bind option. Do not place
-it behind a proxy or port forward. Other local users/processes can access it.
+Every valid manual control first pauses scheduled lighting. Pause persists after closing the dashboard, restarting a process, or reinstalling the job. Use Resume automation to let subsequent schedules run. Resume does not change the lights immediately or replay missed routines. Pause waits for any current command batch before returning. A failed manual send still leaves automation paused.
 
-Morning and Focus reuse the saved presets. On/off sends only power; brightness
-and color send only their respective setting. They do not update presets or
-turn a powered-off light on. Manual settings are desired values, not reported
-light state. UDP success means commands were sent, not acknowledged. A failed
-multi-command preset can leave partially changed settings.
+Schedule additions start disabled. Save validates the whole config, preserves presets/device, creates `config.json.bak` beside the local config, and atomically replaces it. A stale revision requires reload. Saving schedules never resumes automation. Avoid simultaneous edits from an external editor during saving.
 
-## Schedules
+The dashboard never installs or runs a scheduler loop. The existing LaunchAgent reads schedules on each minute check using the Mac's local time. The installer retires the old separate morning job, so dashboard edits control the single intended owner. Existing Monday–Thursday 06:45 config is preserved; a fresh example is disabled.
 
-The form loads existing schedules without changing them. Additions start disabled.
-Save validates the complete config with validation.py, preserves device and presets,
-backs up the previous file as config.json.bak, and replaces the config atomically.
-Reload discards unsaved form edits. Another saved edit causes a stale-revision error;
-reload and reapply your changes. Avoid editing the JSON in another program during
-saving. Backup files contain local device details; do not commit them.
+Requests require an exact local Host; mutations require a per-process token, JSON, and bounded body. Foreign browser origins are rejected. Reload the page after restarting for a new token.
 
-Schedules use the Mac's local timezone and the existing scheduler.py check job.
-The dashboard never runs a scheduling loop, installs jobs, edits launchd plists,
-or changes the Monday–Thursday 06:45 routine on startup. Closing the dashboard
-does not stop launchd. Changes take effect on the next scheduler check.
-
-The local Mac has both com.roomautomation.scheduler and
-com.roomautomation.morninglights definitions. The latter directly runs lights.py
-on at 06:45 Monday–Thursday; editing this form cannot change that legacy job.
-This milestone leaves both jobs untouched. If both are loaded, duplicate commands
-are possible. Inspect loaded jobs before changing scheduling ownership; do not
-install another scheduler just to use this dashboard. Earlier configurable-automation
-notes describe a disabled default; the current config has the morning schedule enabled.
-
-## Verification
-
-```sh
-python3 -B -m unittest discover -s tests -v
-python3 -B scheduler.py validate
-```
-
-Tests use temporary configuration and mocked device commands, including HTTP
-security, malformed input, stale saves, backup preservation, and transport errors.
-No test changes live config, launchd, or lights. Requests require an exact local
-Host, a per-process session token, JSON and a bounded body. Foreign browser origins
-are rejected; there is no cross-origin API access. Reload the page after restarting
-so it receives a fresh token.
-
-On the Mac LAN, manually try each control and visually check the light, then verify
-an unattended scheduled run from logs. These physical checks have not been
-performed for this dashboard milestone.
+Use the README tests and the dated verification record. The broader scene-engine branch has a separate draft PR and is not part of this deployed dashboard.
