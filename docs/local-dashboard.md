@@ -57,3 +57,16 @@ so it receives a fresh token.
 On the Mac LAN, manually try each control and visually check the light, then verify
 an unattended scheduled run from logs. These physical checks have not been
 performed for this dashboard milestone.
+
+## Daily room schedule (October 14, 2026)
+
+The checked-in `config.json` defines four enabled, seven-day schedules in the Mac's local timezone:
+
+| Time | Preset | Effect |
+| --- | --- | --- |
+| 07:00 | morning | Warm RGB 255/210/160 at 30% |
+| 09:00 | daytime | Neutral warm RGB 255/245/225 at 75% |
+| 19:00 | evening | Amber RGB 255/165/95 at 35% |
+| 23:00 | night | Power off |
+
+**Mac setup is still required.** Run `git pull`, `python3 -B scheduler.py validate`, and test presets on the Mac. Check `launchctl list | grep com.roomautomation` to confirm the scheduler agent is loaded. The existing legacy `com.roomautomation.morninglights` agent may still fire at 06:45 Monday–Thursday, independently of these schedules. Disable the legacy agent only after verifying its actual loaded state and plist path; do not blindly delete it. Avoid creating a second repeating scheduler. The Mac must remain awake and logged in, with lights reachable on LAN. Inspect `~/Library/Logs/room-automation.log` after the first unattended event to verify the scheduled command was sent; visually confirm the light behavior.
