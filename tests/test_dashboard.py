@@ -1,4 +1,5 @@
 import copy
+import automation
 import http.client
 import json
 from pathlib import Path
@@ -14,6 +15,10 @@ from test_automation import config
 
 class DashboardTests(unittest.TestCase):
     def setUp(self):
+        override = tempfile.TemporaryDirectory(); self.addCleanup(override.cleanup)
+        for attr, name in [('STATUS', 'automation.json'), ('LOCK', 'control.lock')]:
+            mock = patch.object(automation, attr, Path(override.name) / name)
+            mock.start(); self.addCleanup(mock.stop)
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.path = Path(self.temp.name) / 'config.json'
@@ -72,10 +77,29 @@ class DashboardTests(unittest.TestCase):
             connection.close()
             return result
         self.assertEqual(request('/api/config')[0], 200)
+        from test_scheduler_scenes import config as scene_config
+        self.path.write_text(json.dumps(scene_config()))
+        code, body = request('/api/config')
+        self.assertEqual(code, 200)
+        self.assertIn('movie', json.loads(body)['scenes'])
+        scene_headers = {'Content-Type':'application/json','X-Room-Token':server.token}
+        with patch('scheduler.apply_scene') as apply:
+            self.assertEqual(request('/api/control', '{"scene":"movie"}', scene_headers)[0], 200)
+            apply.assert_called_once()
+        with patch('scheduler.apply_scene', side_effect=dashboard.DeviceError('offline')):
+            self.assertEqual(request('/api/control', '{"scene":"movie"}', scene_headers)[0], 503)
+        self.assertEqual(request('/api/control', '{"scene":"missing"}', scene_headers)[0], 400)
+        self.path.write_text(json.dumps(config()))
+        self.assertEqual(request('/api/automation')[0], 200)
         self.assertEqual(request('/', headers={'Host':'evil.example'})[0], 403)
         self.assertEqual(request('/api/control', '{}')[0], 403)
         self.assertEqual(request('/api/control', '{}', {'X-Room-Token':'é'})[0], 403)
         headers={'Content-Type':'application/json','X-Room-Token':server.token}
+        self.assertEqual(request('/api/automation','{"paused":"true"}',headers)[0],400)
+        self.assertEqual(request('/api/automation','{"paused":true}',headers)[0],200)
+        self.assertTrue(automation.read_status()['paused'])
+        self.assertEqual(request('/api/automation','{"paused":false}',headers)[0],200)
+        self.assertFalse(automation.read_status()['paused'])
         self.assertEqual(request('/api/control','{}',dict(headers,Origin='https://evil.example'))[0],403)
         for body in ['{', '[]', '{"brightness":999}', '{"power":true,"unexpected":1}']:
             self.assertEqual(request('/api/control',body,headers)[0],400)

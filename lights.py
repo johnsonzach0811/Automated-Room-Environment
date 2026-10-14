@@ -1,30 +1,28 @@
 """Basic local Govee LAN light control for the H619D."""
 import argparse
 import logging
+import automation
+import scheduler
+import lan
 
 from transport import ConnectionError, open_socket, send as send_command
 
-LIGHT_IP = "192.168.4.29"
-PORT = 4003
-
-def send(sock, command, data):
-    send_command(sock, LIGHT_IP, PORT, command, data)
+def send(sock, command, data, device=None):
+    device = device or lan.resolve_device(scheduler.load_config()['device'])
+    send_command(sock, device['ip'], device.get('port', 4003), command, data)
 
 def main():
     parser = argparse.ArgumentParser(description="Control Govee lights over LAN")
     parser.add_argument("action", choices=["on", "off"])
     args = parser.parse_args()
-    with open_socket() as sock:
-        if args.action == "off":
-            send(sock, "turn", {"value": 0})
-        else:
-            send(sock, "turn", {"value": 1})
-            send(sock, "brightness", {"value": 30})
-            send(sock, "colorwc", {
-                "color": {"r": 255, "g": 210, "b": 160},
-                "colorTemInKelvin": 0,
-            })
-    print(f"Sent {args.action} command to {LIGHT_IP} (delivery not confirmed)")
+    from devices import LightState, default_device_name
+    config = scheduler.load_config()
+    with automation.locked():
+        automation.write_status(True)
+        light = scheduler.registry_for(config)[default_device_name(config)]
+        light.apply_state(LightState(power=args.action == "on", brightness=30,
+                                    color=(255, 210, 160)))
+    print(f"Sent {args.action} command (delivery not confirmed). Automation paused until resumed.")
 
 if __name__ == "__main__":
     try:

@@ -1,6 +1,10 @@
 """Validate room automation configuration before executing any lighting commands."""
 import ipaddress
+import numbers
+import math
 import re
+
+from devices import DEVICE_TYPES
 
 DAYS = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
 
@@ -14,17 +18,110 @@ def require(condition, message):
         raise ConfigError(message)
 
 
+def validate_ipv4(value, message):
+    try:
+        ipaddress.IPv4Address(value)
+    except (ValueError, TypeError, ipaddress.AddressValueError):
+        raise ConfigError(message) from None
+
+
+def validate_port(port, message):
+    require(type(port) is int and 1 <= port <= 65535, message)
+
+
+def validate_color(color, prefix):
+    require(isinstance(color, dict), f"{prefix}.color must be an RGB object")
+    for channel in ("r", "g", "b"):
+        value = color.get(channel)
+        require(type(value) is int and 0 <= value <= 255,
+                f"{prefix}.color.{channel} must be an integer from 0 to 255")
+
+
+def validate_device_entry(entry, index, names):
+    prefix = f"devices[{index}]"
+    require(isinstance(entry, dict), f"{prefix} must be an object")
+    name = entry.get("name")
+    require(isinstance(name, str) and bool(name.strip()), f"{prefix}.name must be a nonempty string")
+    require(name not in names, f"Duplicate device name: {name!r}")
+    names.add(name)
+    if "identity" in entry:
+        require(isinstance(entry["identity"], str) and bool(entry["identity"].strip()), "identity must be a nonempty string")
+    dtype = entry.get("type", "govee")
+    require(isinstance(dtype, str) and dtype in DEVICE_TYPES,
+            f"{prefix}.type must be one of: {', '.join(sorted(DEVICE_TYPES))}")
+    if dtype == "govee":
+        validate_ipv4(entry.get("ip"), f"{prefix}.ip must be a valid IPv4 address")
+    elif "ip" in entry:
+        validate_ipv4(entry.get("ip"), f"{prefix}.ip must be a valid IPv4 address")
+    validate_port(entry.get("port", 4003), f"{prefix}.port must be an integer from 1 to 65535")
+
+
+def validate_devices(config):
+    """Validate named and legacy devices without modifying configuration."""
+    names = set()
+    if "devices" in config:
+        devices = config["devices"]
+        require(isinstance(devices, list) and bool(devices), "devices must be a nonempty list")
+        for index, entry in enumerate(devices):
+            validate_device_entry(entry, index, names)
+    if "device" in config:
+        device = config["device"]
+        require(isinstance(device, dict), "device must be an object")
+        if "identity" in device:
+            require(isinstance(device["identity"], str) and bool(device["identity"].strip()), "device.identity must be a nonempty string")
+        validate_ipv4(device.get("ip"), "device.ip must be a valid IPv4 address")
+        validate_port(device.get("port", 4003), "device.port must be an integer from 1 to 65535")
+        names.add("default")
+    require(bool(names), 'Configuration must define "device" or a nonempty "devices" list')
+    if "device" in config and "default" in {e["name"] for e in config.get("devices", [])}:
+        raise ConfigError('Legacy device conflicts with devices entry named default')
+    if "default_device" in config:
+        require(isinstance(config["default_device"], str) and config["default_device"] in names,
+                'default_device must name a configured device')
+    return names
+
+
+def validate_scene_settings(settings, prefix):
+    require(isinstance(settings, dict), f"{prefix} must be an object")
+    require(set(settings) <= {"power", "brightness", "color"},
+            f"{prefix} allows only power, brightness, color")
+    if "power" in settings:
+        require(type(settings["power"]) is bool, f"{prefix}.power must be true or false")
+    if "brightness" in settings:
+        require(type(settings["brightness"]) is int and 0 <= settings["brightness"] <= 100,
+                f"{prefix}.brightness must be an integer from 0 to 100")
+    if "color" in settings:
+        validate_color(settings["color"], prefix)
+
+
+def validate_scenes(config, device_names):
+    scenes = config.get("scenes", {})
+    require(isinstance(scenes, dict), "scenes must be an object")
+    for name, scene in scenes.items():
+        require(isinstance(name, str) and bool(name.strip()), "scene names must be nonempty strings")
+        require(isinstance(scene, dict), f"scene {name!r} must be an object")
+        targets = scene.get("devices")
+        require(isinstance(targets, dict) and bool(targets),
+                f"scene {name!r}.devices must be a nonempty object")
+        for device_name, settings in targets.items():
+            require(device_name in device_names,
+                    f"scene {name!r} references unknown device {device_name!r}")
+            validate_scene_settings(settings, f"scene {name!r}.devices[{device_name}]")
+        if "transition" in scene:
+            transition = scene["transition"]
+            require(isinstance(transition, dict), f"scene {name!r}.transition must be an object")
+            duration = transition.get("duration_sec", 0.0)
+            require(isinstance(duration, numbers.Real) and not isinstance(duration, bool)
+                    and math.isfinite(duration) and 0 <= duration <= 30,
+                    f"scene {name!r}.transition.duration_sec must be a finite number from 0 to 30")
+            steps = transition.get("steps", 1)
+            require(type(steps) is int and 1 <= steps <= 60,
+                    f"scene {name!r}.transition.steps must be an integer from 1 to 60")
+
+
 def validate(config):
     require(isinstance(config, dict), "Configuration must be a JSON object")
-    device = config.get("device")
-    require(isinstance(device, dict), "device must be an object")
-    ip = device.get("ip")
-    try:
-        ipaddress.IPv4Address(ip)
-    except (ValueError, TypeError, ipaddress.AddressValueError):
-        raise ConfigError("device.ip must be a valid IPv4 address") from None
-    port = device.get("port", 4003)
-    require(type(port) is int and 1 <= port <= 65535, "device.port must be an integer from 1 to 65535")
+    device_names = validate_devices(config)
 
     presets = config.get("presets")
     require(isinstance(presets, dict) and bool(presets), "presets must be a nonempty object")
@@ -35,12 +132,9 @@ def validate(config):
         brightness = preset.get("brightness")
         require(type(brightness) is int and 0 <= brightness <= 100,
                 f"preset {name!r}.brightness must be an integer from 0 to 100")
-        color = preset.get("color")
-        require(isinstance(color, dict), f"preset {name!r}.color must be an RGB object")
-        for channel in ("r", "g", "b"):
-            value = color.get(channel)
-            require(type(value) is int and 0 <= value <= 255,
-                    f"preset {name!r}.color.{channel} must be an integer from 0 to 255")
+        validate_color(preset.get("color"), f"preset {name!r}")
+
+    validate_scenes(config, device_names)
 
     schedules = config.get("schedules")
     require(isinstance(schedules, list), "schedules must be a list")
@@ -60,6 +154,14 @@ def validate(config):
         require(isinstance(days, list) and bool(days) and all(isinstance(day, str) and day in DAYS for day in days),
                 f"{prefix}.days must be a nonempty list of Mon, Tue, Wed, Thu, Fri, Sat, Sun")
         require(len(days) == len(set(days)), f"{prefix}.days contains duplicates")
-        require(isinstance(schedule.get("preset"), str) and schedule.get("preset") in presets,
-                f"{prefix}.preset must reference an existing preset: {', '.join(presets)}")
+        has_preset = "preset" in schedule
+        has_scene = "scene" in schedule
+        require(has_preset != has_scene,
+                f"{prefix} must reference exactly one of preset or scene")
+        if has_preset:
+            require(isinstance(schedule.get("preset"), str) and schedule.get("preset") in presets,
+                    f"{prefix}.preset must reference an existing preset: {', '.join(presets)}")
+        else:
+            require(isinstance(schedule.get("scene"), str) and schedule.get("scene") in config.get("scenes", {}),
+                    f"{prefix}.scene must reference an existing scene")
     return config

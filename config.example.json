@@ -1,6 +1,6 @@
 {
   "device": {
-    "ip": "192.168.4.29",
+    "ip": "192.0.2.1",
     "port": 4003
   },
   "presets": {
@@ -26,7 +26,7 @@
   "schedules": [
     {
       "name": "Weekday morning",
-      "enabled": true,
+      "enabled": false,
       "time": "06:45",
       "days": [
         "Mon",

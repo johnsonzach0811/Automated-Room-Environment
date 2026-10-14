@@ -1,3 +1,5 @@
+> Historical record. Current configuration, pause behavior, and installation are described in the README and docs/verification-2026-10-11.md. Earlier pending/disabled statements below describe that moment in development.
+
 # Configurable lighting automation — next milestone
 
 The existing `lights.py` and Monday–Thursday 6:45 AM LaunchAgent are **unchanged**. This feature is staged separately to avoid duplicate morning triggers.

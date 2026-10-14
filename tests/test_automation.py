@@ -1,4 +1,5 @@
 import copy
+import automation
 import datetime as dt
 import json
 from pathlib import Path
@@ -118,13 +119,17 @@ class PresetTests(unittest.TestCase):
             self.assertEqual(send.call_args.args[-1], {'value': 0})
 
     def test_legacy_uses_transport(self):
-        with patch('lights.send_command') as send:
+        with patch('lights.send_command') as send, patch('scheduler.load_config', return_value=config()):
             sock = Mock(); lights.send(sock, 'turn', {'value': 1})
-            send.assert_called_once_with(sock, lights.LIGHT_IP, lights.PORT, 'turn', {'value': 1})
+            send.assert_called_once_with(sock, '127.0.0.1', 4003, 'turn', {'value': 1})
 
 
 class ScheduleTests(unittest.TestCase):
     def setUp(self):
+        override = tempfile.TemporaryDirectory(); self.addCleanup(override.cleanup)
+        for attr, name in [('STATUS', 'automation.json'), ('LOCK', 'control.lock')]:
+            mock = patch.object(automation, attr, Path(override.name) / name)
+            mock.start(); self.addCleanup(mock.stop)
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
         self.state = Path(self.temp.name) / 'last-runs.json'
         self.state_patch = patch('scheduler.STATE', self.state); self.state_patch.start(); self.addCleanup(self.state_patch.stop)

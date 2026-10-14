@@ -1,0 +1,85 @@
+"""Device registry: build Device objects from configuration entries.
+
+Supported types:
+  govee      — Govee light over LAN (requires ip; port defaults to 4003)
+  simulated  — in-memory device for tests and development (no network)
+
+A config entry looks like:
+  {"name": "desk-strip", "type": "govee", "ip": "192.168.4.29", "port": 4003}
+"""
+from __future__ import annotations
+
+from .base import Device, DeviceError, LightState
+from .govee import GoveeLight, DEFAULT_PORT
+from .simulated import SimulatedLight
+
+DEVICE_TYPES = {
+    "govee": GoveeLight,
+    "simulated": SimulatedLight,
+}
+
+
+def build_device(entry: dict, socket_factory=None, sender=None) -> Device:
+    """Build a Device from a validated config entry.
+
+    socket_factory/sender are forwarded to LAN devices so callers (and
+    tests) can inject fakes; they default to the real transport.
+    """
+    name = entry.get("name")
+    dtype = entry.get("type", "govee")
+    if dtype not in DEVICE_TYPES:
+        raise DeviceError(
+            f"Unknown device type {dtype!r} for device {name!r}; "
+            f"supported types: {', '.join(sorted(DEVICE_TYPES))}"
+        )
+    if dtype == "govee":
+        kwargs = {}
+        if socket_factory is not None:
+            kwargs["socket_factory"] = socket_factory
+        if sender is not None:
+            kwargs["sender"] = sender
+        return GoveeLight(name, entry["ip"], entry.get("port", DEFAULT_PORT),
+                          identity=entry.get("identity"), **kwargs)
+    return SimulatedLight(name)
+
+
+def build_registry(config: dict, socket_factory=None, sender=None) -> dict[str, Device]:
+    """Build every configured device, keyed by name.
+
+    Accepts the legacy single-device config ({"device": {...}}) and the new
+    {"devices": [...]} list. The legacy device is registered under the name
+    "default" unless a devices list already defines it.
+    """
+    registry: dict[str, Device] = {}
+    for entry in config.get("devices", []):
+        device = build_device(entry, socket_factory=socket_factory, sender=sender)
+        if device.name in registry:
+            raise DeviceError(f"Duplicate device name: {device.name!r}")
+        registry[device.name] = device
+    if "device" in config and "default" not in registry:
+        legacy = dict(config["device"])
+        legacy["name"] = "default"
+        legacy["type"] = "govee"
+        registry["default"] = build_device(legacy, socket_factory=socket_factory, sender=sender)
+    return registry
+
+
+__all__ = [
+    "DEVICE_TYPES",
+    "Device",
+    "DeviceError",
+    "GoveeLight",
+    "LightState",
+    "SimulatedLight",
+    "build_device",
+    "build_registry",
+]
+
+
+def default_device_name(config):
+    """Legacy default, explicit selection, or the first real configured entry."""
+    if "default_device" in config:
+        return config["default_device"]
+    if "device" in config:
+        return "default"
+    return config["devices"][0]["name"]
