@@ -8,7 +8,7 @@ The user LaunchAgent requires a logged-in GUI session and an awake Mac. After up
 
 ## Device address changes
 
-Run `python3 -B scripts/discover_light.py` and select the exact device identity of your H619D. Pair it once using `--update --device-id YOUR_DEVICE_ID`. This backs up and updates only the ignored local configuration. Thereafter controls discover that identity before each command batch, so a DHCP address change does not require code edits. Discovery takes up to three seconds. If the paired device is missing or ambiguous, controls fail rather than send to a stale address. Multicast requires LAN access and LAN Control enabled; other tools must not occupy UDP reply port 4002.
+Run `python3 -B scripts/discover_light.py` and select the exact device identity of your H619D. Pair it once using `--update --device-id YOUR_DEVICE_ID`. For named multi-device configurations add `--name CONFIGURED_NAME`; without it the default device is selected. This backs up and updates only the ignored local configuration. Thereafter controls discover that identity before each command batch, so a DHCP address change does not require code edits. Discovery takes up to three seconds. If the paired device is missing or ambiguous, controls fail rather than send to a stale address. Multicast requires LAN access and LAN Control enabled; other tools must not occupy UDP reply port 4002.
 
 A router DHCP reservation is optional; it is not configured by these scripts. Discovery and device-status queries follow [Govee's official LAN guide](https://app-h5.govee.com/user-manual/wlan-guide).
 
@@ -28,3 +28,5 @@ The scheduler should be loaded; the legacy job should be absent. `state = not ru
 Stop the configurable job with `launchctl bootout gui/$(id -u)/com.roomautomation.scheduler` before restoring a backed-up installation. Restore the prior code/config and scheduler plist from the installation backup, then bootstrap that single job. Do not load both the legacy morning and configurable scheduler for the same routine. Backups also preserve the retired legacy definition if explicitly needed later.
 
 Pause is stored separately at `~/Library/Application Support/RoomAutomation/automation.json`. It survives code updates and job reinstalls. Use explicit Resume to clear it. A malformed/unreadable override file fails closed as paused. Concurrent manual and scheduled controls share `control.lock`; a pause can wait for a command already in progress.
+
+For a read-only hardware check, run `python3 -B scheduler.py health`. It does not change lights or pause state. After upgrading, review docs/verification-2026-10-13.md for pending physical observations. Resume only when you want future routines to run.

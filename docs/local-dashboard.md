@@ -1,15 +1,32 @@
-# Local lighting dashboard
+# Local dashboard
 
-Run `python3 -B dashboard.py`, then open http://127.0.0.1:8765 on this Mac. Keep the process running; Ctrl-C stops the dashboard. Use `--port 8766` if needed. It binds only to 127.0.0.1. Do not proxy or forward it to another network. Local users/processes can access it.
+Run `python3 -B dashboard.py` and open http://127.0.0.1:8765 on this Mac. Keep the
+process running; Ctrl-C stops it. Use `--port 8766` if needed. It binds only to
+127.0.0.1. Local users/processes can access it.
 
-Morning and Focus reuse saved presets. On/off sends power only; brightness and color send their setting only and do not turn an off light on. Sliders are desired settings rather than live device state. Success messages report sent commands, not confirmed physical delivery.
+Preset and individual controls target the configured default device. Named scene
+buttons target the devices in each scene. Scene definitions are edited in the private
+configuration file. The UI shows desired values rather than current hardware state.
+Power, brightness, and RGB controls send only the selected fields on Govee; brightness
+and color do not turn an off light on. Scenes apply complete states with documented
+defaults. Simulated device state is temporary and resets between requests.
 
-Every valid manual control first pauses scheduled lighting. Pause persists after closing the dashboard, restarting a process, or reinstalling the job. Use Resume automation to let subsequent schedules run. Resume does not change the lights immediately or replay missed routines. Pause waits for any current command batch before returning. A failed manual send still leaves automation paused.
+Every valid manual control pauses automation before execution. Pause persists across
+process restarts and installer runs. Failed controls still leave automation paused.
+Resume permits future routines without changing the light immediately or replaying
+missed minutes. Pause waits for an already running command batch.
 
-Schedule additions start disabled. Save validates the whole config, preserves presets/device, creates `config.json.bak` beside the local config, and atomically replaces it. A stale revision requires reload. Saving schedules never resumes automation. Avoid simultaneous edits from an external editor during saving.
+Schedule targets can be presets or scenes. Additions start disabled. Save validates
+the complete config, preserves devices, presets, scenes, and default-device selection,
+backs up the original file beside local config, and atomically replaces it. Stale saves
+require reload. Saving never resumes automation. Avoid concurrent external editing.
 
-The dashboard never installs or runs a scheduler loop. The existing LaunchAgent reads schedules on each minute check using the Mac's local time. The installer retires the old separate morning job, so dashboard edits control the single intended owner. Existing Monday–Thursday 06:45 config is preserved; a fresh example is disabled.
+The dashboard does not install a scheduler or run a scheduling loop. The single
+installed LaunchAgent reads configuration every minute using the Mac's local time.
+Keep the Mac awake and logged in for routines. Closing the dashboard does not stop
+the job. Setup uses the preview/apply installer described in installation.md.
 
-Requests require an exact local Host; mutations require a per-process token, JSON, and bounded body. Foreign browser origins are rejected. Reload the page after restarting for a new token.
-
-Use the README tests and the dated verification record. The broader scene-engine branch has a separate draft PR and is not part of this deployed dashboard.
+Requests require exact local Host; mutations require a session token, JSON, and a
+bounded body. Foreign browser origins are rejected. Reload after server restart.
+Tests isolate files and LAN commands; physical validation is separately tracked in
+the latest verification record.

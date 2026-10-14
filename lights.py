@@ -15,18 +15,13 @@ def main():
     parser = argparse.ArgumentParser(description="Control Govee lights over LAN")
     parser.add_argument("action", choices=["on", "off"])
     args = parser.parse_args()
-    device = lan.resolve_device(scheduler.load_config()['device'])
-    with automation.locked(), open_socket() as sock:
+    from devices import LightState, default_device_name
+    config = scheduler.load_config()
+    with automation.locked():
         automation.write_status(True)
-        if args.action == "off":
-            send(sock, "turn", {"value": 0}, device)
-        else:
-            send(sock, "turn", {"value": 1}, device)
-            send(sock, "brightness", {"value": 30}, device)
-            send(sock, "colorwc", {
-                "color": {"r": 255, "g": 210, "b": 160},
-                "colorTemInKelvin": 0,
-            }, device)
+        light = scheduler.registry_for(config)[default_device_name(config)]
+        light.apply_state(LightState(power=args.action == "on", brightness=30,
+                                    color=(255, 210, 160)))
     print(f"Sent {args.action} command (delivery not confirmed). Automation paused until resumed.")
 
 if __name__ == "__main__":

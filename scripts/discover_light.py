@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 import lan
 from validation import validate
+from devices import default_device_name
 
 
 def select(results, identity):
@@ -20,6 +21,7 @@ def select(results, identity):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--update', action='store_true')
+    parser.add_argument('--name', help='Configured Govee device name; defaults to the default device')
     parser.add_argument('--device-id', help='Exact identity printed by discovery; never select by model alone')
     args = parser.parse_args()
     devices = lan.discover()
@@ -27,12 +29,19 @@ def main():
     if args.update:
         path = ROOT / 'local/config.json'
         config = validate(json.loads(path.read_text()))
-        identity = args.device_id or config['device'].get('identity')
+        name = args.name or default_device_name(config)
+        if name == 'default' and 'device' in config:
+            entry = config['device']
+        else:
+            entry = next((e for e in config.get('devices', []) if e['name'] == name), None)
+        if entry is None or entry.get('type', 'govee') != 'govee':
+            parser.error('Select a configured Govee device with --name')
+        identity = args.device_id or entry.get('identity')
         if not identity:
             parser.error('--device-id is required for the first update')
         found = select(devices, identity)
-        config['device']['ip'] = found['ip']
-        config['device']['identity'] = identity
+        entry['ip'] = found['ip']
+        entry['identity'] = identity
         validate(config)
         path.with_suffix('.json.bak').write_bytes(path.read_bytes())
         temporary = path.with_suffix('.json.tmp')

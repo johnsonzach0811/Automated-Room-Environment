@@ -11,6 +11,9 @@ import tempfile
 import automation
 
 import scheduler
+from devices import DeviceError, default_device_name
+from dataclasses import replace
+
 from validation import ConfigError, require, validate
 
 ROOT = Path(__file__).resolve().parent
@@ -48,6 +51,12 @@ def save_schedules(path, payload):
 
 def control(config, payload):
     require(isinstance(payload, dict), 'Expected an object')
+    if set(payload) == {"scene"}:
+        require(isinstance(payload["scene"], str) and payload["scene"] in config.get("scenes", {}), "Unknown scene")
+        with automation.locked():
+            automation.write_status(True)
+            scheduler.apply_scene(config, payload["scene"])
+        return
     if set(payload) == {'preset'}:
         require(isinstance(payload['preset'], str) and payload['preset'] in config['presets'],
                 'Unknown preset')
@@ -63,10 +72,18 @@ def control(config, payload):
     validate(candidate)
     if 'color' in payload:
         require(set(payload['color']) == {'r', 'g', 'b'}, 'Expected exactly r, g, b')
-    device = config['device']
+    name = default_device_name(config)
+    device = config['device'] if name == 'default' and 'device' in config else next(e for e in config['devices'] if e['name'] == name)
     with automation.locked():
         automation.write_status(True)
-        _send_controls(device, payload)
+        if device.get("type", "govee") == "simulated":
+            adapter = scheduler.registry_for(config)[name]
+            values = dict(payload)
+            if "color" in values:
+                values["color"] = tuple(values["color"][c] for c in ("r", "g", "b"))
+            adapter.apply_state(replace(adapter.get_state(), **values))
+        else:
+            _send_controls(device, payload)
 
 
 def _send_controls(device, payload):
@@ -110,7 +127,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.reply(200, html, 'text/html')
             if self.path == '/api/config':
                 config, revision, _ = read_config(self.server.config_path)
-                return self.reply(200, {'presets': config['presets'], 'schedules': config['schedules'], 'revision': revision})
+                return self.reply(200, {'presets': config['presets'], 'scenes': config.get('scenes', {}), 'schedules': config['schedules'], 'revision': revision})
             if self.path == '/api/automation':
                 return self.reply(200, automation.read_status())
             self.reply(404, {'error': 'Not found'})
@@ -145,7 +162,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.reply(200, {'message': 'Commands sent; light delivery is not confirmed. Automation paused until you resume.'})
         except (ValueError, UnicodeError) as exc:
             self.reply(400, {'error': str(exc)})
-        except OSError:
+        except (OSError, DeviceError):
             self.reply(503, {'error': 'Could not complete operation. Check configuration permissions or the LAN connection. Some commands may have been sent.'})
 
 

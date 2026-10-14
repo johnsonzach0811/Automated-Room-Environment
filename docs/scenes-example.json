@@ -1,0 +1,53 @@
+{
+  "devices": [
+    {
+      "name": "desk",
+      "type": "simulated"
+    },
+    {
+      "name": "shelf",
+      "type": "simulated"
+    }
+  ],
+  "default_device": "desk",
+  "presets": {
+    "morning": {
+      "power": true,
+      "brightness": 30,
+      "color": {
+        "r": 255,
+        "g": 210,
+        "b": 160
+      }
+    }
+  },
+  "scenes": {
+    "autumn": {
+      "devices": {
+        "desk": {
+          "power": true,
+          "brightness": 30,
+          "color": {
+            "r": 255,
+            "g": 160,
+            "b": 60
+          }
+        },
+        "shelf": {
+          "power": false
+        }
+      }
+    }
+  },
+  "schedules": [
+    {
+      "name": "Autumn evening",
+      "enabled": false,
+      "time": "21:00",
+      "days": [
+        "Mon"
+      ],
+      "scene": "autumn"
+    }
+  ]
+}

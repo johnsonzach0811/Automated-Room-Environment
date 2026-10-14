@@ -77,6 +77,19 @@ class DashboardTests(unittest.TestCase):
             connection.close()
             return result
         self.assertEqual(request('/api/config')[0], 200)
+        from test_scheduler_scenes import config as scene_config
+        self.path.write_text(json.dumps(scene_config()))
+        code, body = request('/api/config')
+        self.assertEqual(code, 200)
+        self.assertIn('movie', json.loads(body)['scenes'])
+        scene_headers = {'Content-Type':'application/json','X-Room-Token':server.token}
+        with patch('scheduler.apply_scene') as apply:
+            self.assertEqual(request('/api/control', '{"scene":"movie"}', scene_headers)[0], 200)
+            apply.assert_called_once()
+        with patch('scheduler.apply_scene', side_effect=dashboard.DeviceError('offline')):
+            self.assertEqual(request('/api/control', '{"scene":"movie"}', scene_headers)[0], 503)
+        self.assertEqual(request('/api/control', '{"scene":"missing"}', scene_headers)[0], 400)
+        self.path.write_text(json.dumps(config()))
         self.assertEqual(request('/api/automation')[0], 200)
         self.assertEqual(request('/', headers={'Host':'evil.example'})[0], 403)
         self.assertEqual(request('/api/control', '{}')[0], 403)
