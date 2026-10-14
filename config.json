@@ -21,20 +21,95 @@
         "g": 245,
         "b": 225
       }
+    },
+    "daytime": {
+      "power": true,
+      "brightness": 75,
+      "color": {
+        "r": 255,
+        "g": 245,
+        "b": 225
+      }
+    },
+    "evening": {
+      "power": true,
+      "brightness": 35,
+      "color": {
+        "r": 255,
+        "g": 165,
+        "b": 95
+      }
+    },
+    "night": {
+      "power": false,
+      "brightness": 0,
+      "color": {
+        "r": 255,
+        "g": 120,
+        "b": 60
+      }
     }
   },
   "schedules": [
     {
-      "name": "Weekday morning",
+      "name": "Daily wake up",
       "enabled": true,
-      "time": "06:45",
+      "time": "07:00",
       "days": [
         "Mon",
         "Tue",
         "Wed",
-        "Thu"
+        "Thu",
+        "Fri",
+        "Sat",
+        "Sun"
       ],
       "preset": "morning"
+    },
+    {
+      "name": "Daily daytime",
+      "enabled": true,
+      "time": "09:00",
+      "days": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat",
+        "Sun"
+      ],
+      "preset": "daytime"
+    },
+    {
+      "name": "Daily evening",
+      "enabled": true,
+      "time": "19:00",
+      "days": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat",
+        "Sun"
+      ],
+      "preset": "evening"
+    },
+    {
+      "name": "Daily night",
+      "enabled": true,
+      "time": "23:00",
+      "days": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat",
+        "Sun"
+      ],
+      "preset": "night"
     }
   ]
 }
