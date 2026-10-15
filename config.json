@@ -24,20 +24,20 @@
     },
     "daytime": {
       "power": true,
-      "brightness": 75,
+      "brightness": 45,
       "color": {
         "r": 255,
-        "g": 245,
-        "b": 225
+        "g": 220,
+        "b": 180
       }
     },
     "evening": {
       "power": true,
-      "brightness": 35,
+      "brightness": 15,
       "color": {
         "r": 255,
-        "g": 165,
-        "b": 95
+        "g": 145,
+        "b": 75
       }
     },
     "night": {
@@ -47,6 +47,60 @@
         "r": 255,
         "g": 120,
         "b": 60
+      }
+    },
+    "evening_1800": {
+      "power": true,
+      "brightness": 40,
+      "color": {
+        "r": 255,
+        "g": 210,
+        "b": 160
+      }
+    },
+    "evening_1815": {
+      "power": true,
+      "brightness": 35,
+      "color": {
+        "r": 255,
+        "g": 195,
+        "b": 140
+      }
+    },
+    "evening_1830": {
+      "power": true,
+      "brightness": 30,
+      "color": {
+        "r": 255,
+        "g": 180,
+        "b": 120
+      }
+    },
+    "evening_1845": {
+      "power": true,
+      "brightness": 25,
+      "color": {
+        "r": 255,
+        "g": 165,
+        "b": 100
+      }
+    },
+    "evening_1900": {
+      "power": true,
+      "brightness": 20,
+      "color": {
+        "r": 255,
+        "g": 155,
+        "b": 85
+      }
+    },
+    "evening_1915": {
+      "power": true,
+      "brightness": 17,
+      "color": {
+        "r": 255,
+        "g": 150,
+        "b": 80
       }
     }
   },
@@ -82,9 +136,99 @@
       "preset": "daytime"
     },
     {
-      "name": "Daily evening",
+      "name": "Daily evening 18:00",
+      "enabled": true,
+      "time": "18:00",
+      "days": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat",
+        "Sun"
+      ],
+      "preset": "evening_1800"
+    },
+    {
+      "name": "Daily evening 18:15",
+      "enabled": true,
+      "time": "18:15",
+      "days": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat",
+        "Sun"
+      ],
+      "preset": "evening_1815"
+    },
+    {
+      "name": "Daily evening 18:30",
+      "enabled": true,
+      "time": "18:30",
+      "days": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat",
+        "Sun"
+      ],
+      "preset": "evening_1830"
+    },
+    {
+      "name": "Daily evening 18:45",
+      "enabled": true,
+      "time": "18:45",
+      "days": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat",
+        "Sun"
+      ],
+      "preset": "evening_1845"
+    },
+    {
+      "name": "Daily evening 19:00",
       "enabled": true,
       "time": "19:00",
+      "days": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat",
+        "Sun"
+      ],
+      "preset": "evening_1900"
+    },
+    {
+      "name": "Daily evening 19:15",
+      "enabled": true,
+      "time": "19:15",
+      "days": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat",
+        "Sun"
+      ],
+      "preset": "evening_1915"
+    },
+    {
+      "name": "Daily evening 19:30",
+      "enabled": true,
+      "time": "19:30",
       "days": [
         "Mon",
         "Tue",
