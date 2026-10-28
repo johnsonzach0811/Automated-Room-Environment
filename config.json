@@ -1,6 +1,6 @@
 {
   "device": {
-    "ip": "192.168.4.29",
+    "ip": "192.0.2.1",
     "port": 4003
   },
   "presets": {
@@ -107,7 +107,7 @@
   "schedules": [
     {
       "name": "Daily wake up",
-      "enabled": true,
+      "enabled": false,
       "time": "07:00",
       "days": [
         "Mon",
@@ -122,7 +122,7 @@
     },
     {
       "name": "Daily daytime",
-      "enabled": true,
+      "enabled": false,
       "time": "09:00",
       "days": [
         "Mon",
@@ -137,7 +137,7 @@
     },
     {
       "name": "Daily evening 18:00",
-      "enabled": true,
+      "enabled": false,
       "time": "18:00",
       "days": [
         "Mon",
@@ -152,7 +152,7 @@
     },
     {
       "name": "Daily evening 18:15",
-      "enabled": true,
+      "enabled": false,
       "time": "18:15",
       "days": [
         "Mon",
@@ -167,7 +167,7 @@
     },
     {
       "name": "Daily evening 18:30",
-      "enabled": true,
+      "enabled": false,
       "time": "18:30",
       "days": [
         "Mon",
@@ -182,7 +182,7 @@
     },
     {
       "name": "Daily evening 18:45",
-      "enabled": true,
+      "enabled": false,
       "time": "18:45",
       "days": [
         "Mon",
@@ -197,7 +197,7 @@
     },
     {
       "name": "Daily evening 19:00",
-      "enabled": true,
+      "enabled": false,
       "time": "19:00",
       "days": [
         "Mon",
@@ -212,7 +212,7 @@
     },
     {
       "name": "Daily evening 19:15",
-      "enabled": true,
+      "enabled": false,
       "time": "19:15",
       "days": [
         "Mon",
@@ -227,7 +227,7 @@
     },
     {
       "name": "Daily evening 19:30",
-      "enabled": true,
+      "enabled": false,
       "time": "19:30",
       "days": [
         "Mon",
@@ -242,7 +242,7 @@
     },
     {
       "name": "Daily night",
-      "enabled": true,
+      "enabled": false,
       "time": "23:00",
       "days": [
         "Mon",

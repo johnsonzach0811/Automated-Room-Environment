@@ -143,8 +143,9 @@ def create_server(port=8765, config_path=scheduler.CONFIG):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--port', type=int, default=8765)
+    parser.add_argument('--config', type=Path, default=scheduler.CONFIG, help='Configuration JSON path')
     args = parser.parse_args()
-    with create_server(args.port) as server:
+    with create_server(args.port, args.config) as server:
         print(f'Room dashboard: http://127.0.0.1:{server.server_port} (Ctrl-C to stop)', flush=True)
         try:
             server.serve_forever()

@@ -2,7 +2,7 @@
 
 ## Confirmed working
 - Govee H619D LAN control enabled.
-- Device discovered on LAN at `192.168.4.29` (local DHCP address; may change).
+- Device discovered on LAN (local DHCP address omitted; may change).
 - `lights.py on` and `lights.py off` successfully control the real lights.
 - macOS `launchd` job `com.roomautomation.morninglights` installed locally for Monday–Thursday at 06:45.
 - Manual `launchctl kickstart -k gui/$(id -u)/com.roomautomation.morninglights` successfully triggered the lights after an earlier transient `OSError: [Errno 65] No route to host`.

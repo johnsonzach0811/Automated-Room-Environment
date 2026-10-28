@@ -1,10 +1,12 @@
-# Project Muse — Phase A Project Charter
+# Automated Room Project — Phase A Project Charter
 
 Version: 1.0 | Prepared: October 10, 2026 | Status: Initial planning baseline
 
+This document preserves the original broader plan. See the [README](../README.md) for what the lighting prototype currently does and its potential future plans, including seasonal room-scent deliveries. Those ideas do not change this original acceptance baseline.
+
 ## Purpose and business case
 
-Muse explores whether existing household technology can complement seasonal decorating through coordinated lighting, visual content, and audio. The intended experience is an atmosphere that changes with time of day and the selected seasonal theme. Customer demand, willingness to pay, and commercial differentiation remain unvalidated hypotheses.
+The Automated Room Project explores whether existing household technology can complement seasonal decorating through coordinated lighting, visual content, and audio. The intended experience is an atmosphere that changes with time of day and the selected seasonal theme. Customer demand, willingness to pay, and commercial differentiation remain unvalidated hypotheses.
 
 Phase A answers a narrower question: can Zach's existing room devices be coordinated reliably from a Mac-based controller?
 
