@@ -1,88 +1,86 @@
 # Automated Room Project
 
-A personal engineering project by Zachary Johnson that automates room lighting from a Mac mini. It controls a Govee H619D light strip over the local network, using saved lighting settings and a daily schedule.
+A personal engineering project by Zachary Johnson that uses a Mac mini to control room lighting automatically throughout the day.
 
-## What it does today
+The goal is to make the room match the time of day without having to adjust the lights by hand. The project currently controls one Govee H619D light strip.
 
-- Turns the light on or off and changes its brightness and RGB color.
-- Applies saved presets such as morning, focus, evening, and night.
-- Runs enabled routines at selected times and days of the week.
-- Provides a local browser dashboard for manual controls and schedule editing.
-- Validates settings, logs commands, and retries detected network send failures.
+## What it does now
 
-The example daily routine turns lights on in the morning, changes daytime lighting, gradually dims and warms the lighting through separate evening steps, and turns it off at night. All example schedules are disabled until configured locally.
+- Turns the lights on and off at selected times.
+- Changes brightness and color using saved settings for morning, daytime, evening, and night.
+- Supports an evening routine that makes the lighting warmer and dimmer in steps.
+- Provides a browser page on the Mac for adjusting the lights and editing schedules.
+- Checks settings for mistakes, keeps a record of commands, and retries when the computer reports a sending error.
 
-**Current scope: one light strip.** The project does not currently control a TV, play audio, switch themes automatically by season, or order room scents. Manual controls do not pause the schedule.
+For example, a daily routine can turn the lights on in the morning, adjust them during the day, dim them through the evening, and turn them off at bedtime. The included example schedules start turned off so they can be reviewed before use.
 
 ## How it works
 
-The dashboard and scheduler use the same JSON settings. The dashboard handles manual controls and schedule edits; a macOS `launchd` job runs the scheduler every minute. Python sends lighting commands directly over the local network. Python's standard library is the only software dependency.
+The Mac stores the lighting settings and schedule. Once scheduling is set up, it checks every minute whether a lighting change is due and sends that change to the light over the home network.
 
-```mermaid
-flowchart TD
-    Dashboard[Browser dashboard] --> Controller[Python lighting controls]
-    Schedule[macOS scheduled checks] --> Controller
-    Settings[Saved presets and schedules] --> Controller
-    Controller --> Light[Govee H619D over local UDP]
-```
+The browser controls use the same saved settings. They let you make changes manually, but opening the browser page does not start the automatic schedule. The project is written in Python and does not require extra Python packages.
 
 ## What has been tested
 
-| Area | Evidence |
+| Test | Result |
 | --- | --- |
-| Physical light control | Manual power, color, and brightness results recorded October 10, 2026 |
-| Unattended operation | Two observed October 10 tests: a scheduled power-on and a config-driven Morning → Focus change |
-| Software behavior | Automated tests cover configuration validation, schedule matching, duplicate-run handling, network errors, and dashboard requests/saves |
-| Still to verify | Physical dashboard controls, repeated daily operation, and recovery after sleep, restart, or network changes |
+| Changing the actual lights | Manual on/off, color, and brightness tests were recorded on October 10, 2026. |
+| Running without a manual command | Two scheduled tests worked on October 10: turning the lights on and switching from the Morning setting to Focus. |
+| Checking the program | Automated tests check settings, scheduled changes, repeated checks, error handling, and the browser controls. These tests do not operate the actual lights. |
+| Further testing | The browser controls still need a recorded test with the actual lights. Longer daily use and behavior after sleep, restart, or a lost connection also need testing. |
 
-A successful UDP send does not confirm the light received or applied it. The Mac must be awake and connected. Missed schedule times are skipped; only one scheduler job should run at a time.
+The Mac must stay awake and connected for scheduled changes to run. A change missed while the Mac is asleep is skipped. The program reports when it sends a command, but cannot confirm that the light received it.
+
+Manual adjustments do not pause the schedule: the next scheduled change can replace them.
 
 ## Potential future plans
 
-These are ideas for later development, not implemented features or commitments.
+These are possible additions, not features that work today.
 
-- **Pause/resume:** temporarily stop scheduled lighting changes during manual use.
-- **Reliability and setup:** make Mac scheduler installation easier and test repeated operation, sleep/wake, and restart behavior.
-- **Seasonal room coordination:** change room themes by time of year and investigate optional TV and audio integration.
-- **Seasonal room-scent deliveries:** explore automated Amazon deliveries of room scents selected for the time of year, so seasonal scents arrive as the room theme changes. Amazon ordering, payment, and delivery integration have not been built or validated.
+- **Pause and resume:** pause automatic changes when adjusting the room manually.
+- **Easier setup and more testing:** simplify setup on the Mac and check how consistently the schedule works over time.
+- **Seasonal room themes:** change the room's settings based on the time of year.
+- **TV and audio:** explore adding background visuals and sound to match the room.
+- **Seasonal room scents:** explore automated Amazon deliveries of room scents based on the time of year, so new scents arrive for each season. No ordering or delivery connection has been built or tested.
 
-## Quick start
+## Setup
 
-Python 3.9+ is required. The deployed scheduling approach uses macOS. Tests can run without a Govee device.
+The current setup uses a Mac, Python 3.9 or newer, and a Govee H619D with LAN Control enabled in the Govee app. The Mac and lights must be able to reach each other on the home network.
+
+Download the project and make a separate copy of the example settings for your own room:
 
 ```sh
 git clone https://github.com/johnsonzach0811/Automated-Room-Environment.git
 cd Automated-Room-Environment
 cp config.json config.local.json
-python3 -B -m unittest discover -s tests -v
 ```
 
-`config.json` is a portable example: its address is a documentation placeholder and every schedule is disabled. Set `device.ip` in the ignored `config.local.json` to the light's actual LAN address. Enable LAN Control in Govee Home for the supported device and place the controller on the same reachable network.
+In `config.local.json`, replace `device.ip` with your light's network address. This personal settings file is excluded from GitHub. Review the schedules before turning any on.
+
+Check the settings and open the browser controls:
 
 ```sh
 python3 -B scheduler.py validate
 python3 -B dashboard.py
 ```
 
-Open [http://127.0.0.1:8765](http://127.0.0.1:8765). Manual control buttons send real lighting commands. To test a preset directly:
+Open [http://127.0.0.1:8765](http://127.0.0.1:8765) on the Mac. The buttons send commands to the actual lights.
+
+Automatic scheduling needs a separate Mac background task. See the [schedule setup instructions](docs/configurable-automation.md) and [browser control instructions](docs/local-dashboard.md).
+
+**If the project is already running on your Mac:** before pulling this update, copy your working `config.json` to `config.local.json`. This preserves your light's address and enabled schedules.
+
+To run the program's checks without operating the lights:
 
 ```sh
-python3 -B scheduler.py preset morning
-python3 -B scheduler.py preset focus
-python3 -B scheduler.py preset night
+python3 -B -m unittest discover -s tests -v
 ```
 
-All entry points prefer `config.local.json` when present, otherwise `config.json`. Use `--config /absolute/path/to/config.json` to select another file. The legacy `lights.py on|off` also uses this configuration.
+## Project records
 
-**Existing Mac installation:** before pulling this cleanup, copy your current working `config.json` to `config.local.json` so your device address and enabled schedules are retained. This checkout's example configuration does not enable unattended actions.
+- [First successful automatic lighting test](docs/automation-test-success-2026-10-10.md)
+- [Successful scheduled lighting change](docs/configurable-scheduler-test-2026-10-10.md)
+- [Technical details and limitations](RELIABILITY.md)
+- [Original project plan](docs/project-charter.md) and [original scope](docs/scope-statement.md)
 
-See [dashboard and setup details](docs/local-dashboard.md) and [scheduler setup](docs/configurable-automation.md). No LaunchAgent files are installed by these commands.
-
-## Evidence and project records
-
-- [First unattended hardware test](docs/automation-test-success-2026-10-10.md)
-- [Config-driven unattended test](docs/configurable-scheduler-test-2026-10-10.md)
-- [Transport and scheduler reliability](RELIABILITY.md)
-- [Initial charter](docs/project-charter.md), [scope](docs/scope-statement.md), and [compatibility register](templates/compatibility-register.csv)
-
-The original charter and dated progress notes preserve earlier planning and test history. They do not describe completed scope; the current capabilities and potential plans are listed above. No open-source license has been selected.
+The original plans and dated notes show how the project developed. The sections above describe what works now and what is being considered for later.
