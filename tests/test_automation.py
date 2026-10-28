@@ -44,6 +44,12 @@ class ValidationTests(unittest.TestCase):
         c = config(); c["schedules"].append(copy.deepcopy(c["schedules"][0]))
         with self.assertRaises(ConfigError): validate(c)
 
+    def test_explicit_config_path(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'custom.json'
+            path.write_text(json.dumps(config()))
+            self.assertEqual(scheduler.load_config(path), config())
+
     def test_validate_action_never_sends(self):
         with patch('scheduler.apply_preset') as apply:
             scheduler.run_action(Mock(action='validate'), config())
@@ -119,8 +125,8 @@ class PresetTests(unittest.TestCase):
 
     def test_legacy_uses_transport(self):
         with patch('lights.send_command') as send:
-            sock = Mock(); lights.send(sock, 'turn', {'value': 1})
-            send.assert_called_once_with(sock, lights.LIGHT_IP, lights.PORT, 'turn', {'value': 1})
+            sock = Mock(); lights.send(sock, 'turn', {'value': 1}, config()['device'])
+            send.assert_called_once_with(sock, '127.0.0.1', 4003, 'turn', {'value': 1})
 
 
 class ScheduleTests(unittest.TestCase):
@@ -152,6 +158,22 @@ class ScheduleTests(unittest.TestCase):
             self.now.now.return_value = now
             with patch('scheduler.apply_preset') as apply:
                 scheduler.check_schedules(config()); apply.assert_not_called()
+
+    def test_invalid_state_shape_fails_before_sending(self):
+        for state in [[], None, 42, {"Morning": []}]:
+            self.state.write_text(json.dumps(state))
+            with self.subTest(state=state), patch('scheduler.apply_preset') as apply:
+                with self.assertRaises(ConfigError):
+                    scheduler.check_schedules(config())
+                apply.assert_not_called()
+
+    def test_failed_state_replace_preserves_previous_file(self):
+        self.state.write_text('{"Old": "timestamp"}')
+        with patch('scheduler.os.replace', side_effect=OSError('disk error')):
+            with self.assertRaises(OSError):
+                scheduler.save_state({'Morning': '2026-10-12 06:45'})
+        self.assertEqual(json.loads(self.state.read_text()), {'Old': 'timestamp'})
+        self.assertEqual(list(self.state.parent.iterdir()), [self.state])
 
     def test_disabled(self):
         c = config(); c['schedules'][0]['enabled'] = False

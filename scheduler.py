@@ -3,13 +3,16 @@ import argparse
 import datetime as dt
 import json
 import logging
+import os
+import tempfile
 from pathlib import Path
 
 from validation import ConfigError, validate
 from transport import ConnectionError, open_socket, send
 
 ROOT = Path(__file__).resolve().parent
-CONFIG = ROOT / "config.json"
+LOCAL_CONFIG = ROOT / "config.local.json"
+CONFIG = LOCAL_CONFIG if LOCAL_CONFIG.exists() else ROOT / "config.json"
 STATE = Path.home() / "Library" / "Application Support" / "RoomAutomation" / "last-runs.json"
 DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 LOG = Path.home() / "Library" / "Logs" / "room-automation.log"
@@ -24,8 +27,8 @@ def setup_logging():
     )
 
 
-def load_config():
-    with CONFIG.open() as f:
+def load_config(path=None):
+    with Path(path or CONFIG).open() as f:
         return validate(json.load(f))
 
 
@@ -50,6 +53,10 @@ def check_schedules(config):
         runs = json.loads(STATE.read_text())
     except (FileNotFoundError, json.JSONDecodeError):
         runs = {}
+    if not isinstance(runs, dict) or not all(
+        isinstance(key, str) and isinstance(value, str) for key, value in runs.items()
+    ):
+        raise ConfigError("Schedule state must be an object of schedule names and timestamps")
     failed = False
     for schedule in config["schedules"]:
         if not schedule.get("enabled", False):
@@ -67,19 +74,36 @@ def check_schedules(config):
             failed = True
             continue
         runs[key] = minute
-        STATE.write_text(json.dumps(runs, indent=2) + "\n")
+        save_state(runs)
         logging.info("Schedule %s: commands sent at %s", key, minute)
 
     return not failed
+
+def save_state(runs):
+    """Replace state atomically so interrupted writes cannot leave partial JSON."""
+    temp = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", dir=STATE.parent, delete=False) as f:
+            temp = f.name
+            json.dump(runs, f, indent=2)
+            f.write("\n")
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(temp, STATE)
+    finally:
+        if temp and os.path.exists(temp):
+            os.unlink(temp)
+
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("action", choices=["preset", "check", "validate"])
     parser.add_argument("name", nargs="?")
+    parser.add_argument("--config", type=Path, default=CONFIG, help="Configuration JSON path")
     args = parser.parse_args()
     setup_logging()
     try:
-        config = load_config()
+        config = load_config(args.config)
         run_action(args, config)
     except (ConfigError, json.JSONDecodeError) as exc:
         logging.error("Invalid configuration: %s", exc)

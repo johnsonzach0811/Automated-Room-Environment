@@ -1,28 +1,29 @@
-# Configurable lighting automation — next milestone
+# Configurable lighting automation
 
-The existing `lights.py` and Monday–Thursday 6:45 AM LaunchAgent are **unchanged**. This feature is staged separately to avoid duplicate morning triggers.
+Current implementation: `scheduler.py` reads validated JSON, applies named presets, and checks enabled schedules. This file supersedes the initial disabled-weekday-only setup notes.
 
-## Try the two presets
+## Configuration
 
-```bash
-cd ~/automated-room-environment
-git pull
-python3 scheduler.py preset morning
-python3 scheduler.py preset focus
+Copy the tracked example `config.json` to ignored `config.local.json`. Set the device IP there and test `morning`, `focus`, and `night` manually before enabling schedules. The example retains a daily wake/daytime/progressive-evening/night pattern, with **all schedules disabled**. `config.local.json` takes precedence automatically; `--config` selects an explicit file.
+
+```sh
+python3 -B scheduler.py validate
+python3 -B scheduler.py preset morning
+python3 -B scheduler.py check
 ```
 
-Edit `config.json` to change brightness, RGB color, or schedules. Presets are `morning` (warm, 30%) and `focus` (neutral warm, 65%). The IP address is specific to your local network.
+`check` runs once. It matches the current local minute and weekday and records completed sends in `~/Library/Application Support/RoomAutomation/last-runs.json`. Logs go to `~/Library/Logs/room-automation.log`. No late catch-up is performed. Manual controls do not suspend future schedules.
 
-## How scheduling will work
+## macOS scheduling
 
-`python3 scheduler.py check` examines enabled schedules against the **current local minute and weekday**, executes matching presets, and writes a last-run marker under `~/Library/Application Support/RoomAutomation/` to prevent duplicate runs during the same minute.
+The deployment used a local user LaunchAgent named `com.roomautomation.scheduler` to invoke `scheduler.py check` every minute. A portable installer is not included. A new installation needs a LaunchAgent whose `ProgramArguments` contain the absolute Python executable, absolute scheduler script, and `check`; use `StartInterval` of 60 seconds and writable log paths. Test that configuration on the Mac before relying on it.
 
-The included weekday morning schedule is **disabled by default** so it doesn't overlap the already installed `launchd` morning job. Once presets work, the next step is to install a repeating one-minute LaunchAgent to run `scheduler.py check`, disable the old morning LaunchAgent, and enable the new config schedule. Do **not** enable the new schedule without migrating the old job.
+For an existing installation, inspect the loaded job:
 
-## Limitations
+```sh
+launchctl print gui/$(id -u)/com.roomautomation.scheduler
+```
 
-- This is a small scheduler, not a continuously running daemon.
-- Running `check` manually only fires a schedule if executed in the matching minute.
-- The Mac must be awake and the user logged in for the user LaunchAgent.
-- UDP sends do not confirm that lights actually received commands.
-- Clock changes, network interruptions and missed minutes may cause skipped triggers; more resilience is future work.
+An older job, `com.roomautomation.morninglights`, used `lights.py on` at 06:45 Monday–Thursday. The October 10 test record says it was disabled, but this repository cannot establish its current loaded state. Inspect it and the temporary `com.roomautomation.test1030` test job locally. Keep only one scheduling owner; overlapping scheduler processes are not locked against each other.
+
+The Mac must remain awake and the user logged in. A successful send log is not physical confirmation. Verify at least one unattended event by observing the light and recording the result. Sleep/wake, reboot, network failure and repeated-run measurements remain follow-up work.

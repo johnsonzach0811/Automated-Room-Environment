@@ -15,10 +15,14 @@ A failed scheduled preset is not marked complete; remaining due schedules are
 still attempted. Launchd may retry within the same scheduled minute, but there is
 no late catch-up. A partially applied preset may leave some light settings changed.
 
-The existing Monday–Thursday 06:45 configuration and launchd files are preserved.
-Two launchd definitions exist locally (scheduler and legacy morninglights).
-Their loaded status was not available from the initial restricted session;
-if both are loaded, both can send commands at 06:45. Neither is changed here.
+Run markers are replaced atomically. Structurally invalid state raises ConfigError
+before any sends; missing or malformed JSON starts a fresh marker set. A fresh set
+can repeat a send in the current minute. Atomic replacement does not serialize
+overlapping processes: deploy one scheduler job. A process crash after a send but
+before recording it can also result in a repeated send.
+
+See docs/configurable-automation.md for current configuration and local LaunchAgent
+migration. Job state on the user's Mac cannot be inferred from this repository.
 
 Validation also rejects non-string preset references with ConfigError rather than
 an unexpected TypeError. No dependencies are needed beyond Python's standard library.

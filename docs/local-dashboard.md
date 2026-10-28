@@ -3,7 +3,8 @@
 Requires Python 3.9+; no packages, account, or cloud service needed.
 
 ```sh
-cd ~/automated-room-environment
+cd Automated-Room-Environment
+cp config.json config.local.json  # first setup only; edit device.ip locally
 python3 -B dashboard.py
 ```
 
@@ -22,23 +23,18 @@ multi-command preset can leave partially changed settings.
 
 The form loads existing schedules without changing them. Additions start disabled.
 Save validates the complete config with validation.py, preserves device and presets,
-backs up the previous file as config.json.bak, and replaces the config atomically.
+backs up the previous file with a .json.bak suffix, and replaces the config atomically.
 Reload discards unsaved form edits. Another saved edit causes a stale-revision error;
 reload and reapply your changes. Avoid editing the JSON in another program during
 saving. Backup files contain local device details; do not commit them.
 
-Schedules use the Mac's local timezone and the existing scheduler.py check job.
-The dashboard never runs a scheduling loop, installs jobs, edits launchd plists,
-or changes the Monday–Thursday 06:45 routine on startup. Closing the dashboard
-does not stop launchd. Changes take effect on the next scheduler check.
-
-The local Mac has both com.roomautomation.scheduler and
-com.roomautomation.morninglights definitions. The latter directly runs lights.py
-on at 06:45 Monday–Thursday; editing this form cannot change that legacy job.
-This milestone leaves both jobs untouched. If both are loaded, duplicate commands
-are possible. Inspect loaded jobs before changing scheduling ownership; do not
-install another scheduler just to use this dashboard. Earlier configurable-automation
-notes describe a disabled default; the current config has the morning schedule enabled.
+Schedules use the Mac's local timezone. The dashboard does not run a scheduling
+loop or install LaunchAgents. Closing it does not stop an existing scheduler.
+All entry points prefer ignored `config.local.json` when present, falling back to
+the tracked example `config.json`; `--config` selects a different path.
+The tracked example disables every schedule. Enable routines only in your local
+configuration after testing the device address and checking existing jobs.
+See [scheduler setup and legacy-job migration](configurable-automation.md).
 
 ## Verification
 
@@ -58,15 +54,10 @@ On the Mac LAN, manually try each control and visually check the light, then ver
 an unattended scheduled run from logs. These physical checks have not been
 performed for this dashboard milestone.
 
-## Daily room schedule (October 14, 2026)
+## Example schedule
 
-The checked-in `config.json` defines four enabled, seven-day schedules in the Mac's local timezone:
-
-| Time | Preset | Effect |
-| --- | --- | --- |
-| 07:00 | morning | Warm RGB 255/210/160 at 30% |
-| 09:00 | daytime | Neutral warm RGB 255/245/225 at 75% |
-| 19:00 | evening | Amber RGB 255/165/95 at 35% |
-| 23:00 | night | Power off |
-
-**Mac setup is still required.** Run `git pull`, `python3 -B scheduler.py validate`, and test presets on the Mac. Check `launchctl list | grep com.roomautomation` to confirm the scheduler agent is loaded. The existing legacy `com.roomautomation.morninglights` agent may still fire at 06:45 Monday–Thursday, independently of these schedules. Disable the legacy agent only after verifying its actual loaded state and plist path; do not blindly delete it. Avoid creating a second repeating scheduler. The Mac must remain awake and logged in, with lights reachable on LAN. Inspect `~/Library/Logs/room-automation.log` after the first unattended event to verify the scheduled command was sent; visually confirm the light behavior.
+The portable example contains ten disabled, seven-day routines: morning at 07:00,
+daytime at 09:00, progressive evening presets every 15 minutes from 18:00 through
+19:30, and power off at 23:00. Daytime uses RGB 255/165/85 at 45%; the evening
+progression reduces brightness from 40% to 15%. `config.json` is the source of
+truth for example values; your ignored local file owns your actual routine.
