@@ -1,4 +1,4 @@
-# Project Muse
+# Room Automation Project
 
 Mac-based room lighting automation for a Govee H619D. A working lighting prototype is implemented: local controls, Morning and Focus presets, configurable schedules, a browser dashboard, retries, and persistent pause/resume. The broader seasonal room project remains in Phase A; TV/audio integration and the three autumn scenes are pending a joint scope decision.
 
